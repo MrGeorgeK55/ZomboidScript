@@ -10,6 +10,10 @@
 #include <regex>
 #include <vector>
 #include <tgbot/tgbot.h>
+#include <rconpp/rconpp.h>
+
+// GeoVersion 1.0.0
+//g++ zomboidScript.cpp -o zomboidScript --std=c++14 -I/usr/local/include -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
 
 // variables
 // FTP
