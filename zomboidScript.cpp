@@ -13,7 +13,7 @@
 #include <rconpp/rcon.h>
 
 // GeoVersion 1.0.0
-//g++ zomboidScript.cpp -o zomboidScript --std=c++14 -I/usr/local/include -L/usr/local/lib -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
+//g++ zomboidScript.cpp -o zomboidScript -I/usr/local/include -L/usr/local/lib -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
 
 // variables
 // FTP
