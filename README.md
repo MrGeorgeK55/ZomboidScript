@@ -11,8 +11,7 @@ Basic explanation:
 - also if all the players disconnect after the first notification it skips the minutes remaining
 
 This script is designed to be executed as a one-time operation, you can execute in any time interval (once each hour is recommended)  
-    
-also the aproach and trouble of downloading the logfile and analizing its because the response of the command "CheckModsNeedUpdate" is "Checking started. The answer will be written in the log file and in the chat" but it never writes to a chat or responds with a "We already checked and we have updates".  
+also the approach and trouble of downloading the logfile and analizing its because the response of the command "CheckModsNeedUpdate" is "Checking started. The answer will be written in the log file and in the chat" but it never writes to a chat or responds with a "We already checked and we have updates".
 Standalone examples are in the folder  
   
   
