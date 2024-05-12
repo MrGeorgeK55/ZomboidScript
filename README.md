@@ -1,6 +1,6 @@
-Script to check mods updates of your Project Zomboid server
+## Script to check mods updates of your Project Zomboid server
 
-Basic explanation:  
+## Basic explanation:  
 - connects to RCON server with the credentials of config.cfg file  
 - sends the command "CheckModsNeedUpdate" to generate the response in the log file  
 - downloads the server-console.txt of your Zomboid server via FTP (most services or virtual machines you rent already have the FTP server installed and running)  
@@ -14,5 +14,18 @@ This script is designed to be executed as a one-time operation, you can execute 
 also the approach and trouble of downloading the logfile and analizing its because the response of the command "CheckModsNeedUpdate" is "Checking started. The answer will be written in the log file and in the chat" but it never writes to a chat or responds with a "We already checked and we have updates".
 Standalone examples are in the folder  
   
-  
->NOTE!: edit and rename the config file with your credentials
+> [!IMPORTANT] 
+> edit and rename the config file with your credentials
+
+## Compilation: 
+
+```sh
+g++ zomboidScript.cpp -o zomboidScript --std=c++14 -I/usr/local/include -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
+```
+
+## Libraries used:
+
+
+[RCON++](https://github.com/Jaskowicz1/rconpp)
+[Telegram C++](https://github.com/reo7sp/tgbot-cpp/tree/master)
+[LibConfig++](https://github.com/hyperrealm/libconfig)
