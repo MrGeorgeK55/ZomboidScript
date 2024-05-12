@@ -20,7 +20,7 @@ Standalone examples are in the folder
 ## Compilation: 
 
 ```sh
-g++ zomboidScript.cpp -o zomboidScript --std=c++14 -I/usr/local/include -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
+g++ zomboidScript.cpp -o zomboidScript -I/usr/local/include -L/usr/local/lib -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
 ```
 
 ## Libraries used:

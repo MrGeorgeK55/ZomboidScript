@@ -10,10 +10,10 @@
 #include <regex>
 #include <vector>
 #include <tgbot/tgbot.h>
-#include <rconpp/rconpp.h>
+#include <rconpp/rcon.h>
 
 // GeoVersion 1.0.0
-//g++ zomboidScript.cpp -o zomboidScript --std=c++14 -I/usr/local/include -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
+//g++ zomboidScript.cpp -o zomboidScript --std=c++14 -I/usr/local/include -L/usr/local/lib -lTgBot -lboost_system -lssl -lcrypto -lpthread -lcurl -lrconpp -lconfig++
 
 // variables
 // FTP
@@ -28,13 +28,12 @@ std::string rconPassword;
 std::atomic<bool> connected{false};
 // telegram
 std::string telegramToken;
-int telegramChatId;
+int chat_id = 0;
 // words
 std::string wordsArray;
-// file name
-std::string logNameOnServer;
 // file downloaded
-std::string logNameDownloaded;
+std::string localLogName;
+
 
 
 // get the variables from a .config file
@@ -50,22 +49,32 @@ void get_config()
 
     std::cout << "Reading config file" << std::endl;
     libconfig::Config cfg;
-    cfg.readFile("config.cfg");
+    try {
+        cfg.readFile("config.cfg");
+    } catch(const libconfig::ParseException &pex) {
+        std::cerr << "Parse error at " << pex.getLine() << " - " << pex.getError() << std::endl;
+        exit(1);
+    }
     // FTP
+    std::cout << "Reading FTP variables" << std::endl;
     ftpUsername = cfg.lookup("ftp_username").c_str();
     ftpPassword = cfg.lookup("ftp_password").c_str();
     ftpAddress = cfg.lookup("ftp_addressnfile").c_str();
     ftpPort = cfg.lookup("ftp_port");
     // rcon
+    std::cout << "Reading RCON variables" << std::endl;
     rconAddress = cfg.lookup("rcon_address").c_str();
     rconPort = cfg.lookup("rcon_port");
     rconPassword = cfg.lookup("rcon_password").c_str();
     // telegram
+    std::cout << "Reading Telegram variables" << std::endl;
     telegramToken = cfg.lookup("telegram_token").c_str();
-    telegramChatId = cfg.lookup("telegram_chat_id");
+    chat_id = cfg.lookup("telegram_chat_id");
     // words
+    std::cout << "Reading words array" << std::endl;
     wordsArray = cfg.lookup("words_array").c_str();
     // file name
+    std::cout << "Reading local log file name" << std::endl;
     localLogName = cfg.lookup("local_log_file_name").c_str();
 
     std::cout << "Config file read" << std::endl;
@@ -257,6 +266,10 @@ int main()
     // get variables from config file
     get_config();
 
+    //telegram bot
+    TgBot::Bot bot(telegramToken);
+
+
     // attempt to connect to RCON
     std::cout << "Connecting to RCON with address: " << rconAddress << " port: " << rconPort << " password: " << rconPassword << std::endl;
     rconpp::rcon_client client(rconAddress, rconPort, rconPassword);
@@ -267,7 +280,7 @@ int main()
     };
 
     client.start(true);
-    bool isConnected = connected.load();
+    bool isConnected = client.connected.load();
     if (isConnected == false)
     {
         std::cout << "Failed to connect to RCON server" << std::endl;
@@ -278,8 +291,9 @@ int main()
     // i hate send_data, send_data_sync rules
     // send command to check if mods need update
     //this generates the log file in the server 
+    std::cout << "Checking if mods need update. sending command to server" << std::endl;
     response = client.send_data_sync("checkModsNeedUpdate", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-    std::cout << "Response data: " << response.data << std::endl;
+    std::cout << response.data << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(5));
     
     // get the log file
@@ -293,66 +307,73 @@ int main()
         //telegram notify
         bot.getApi().sendMessage(chat_id, "Estamos reiniciando el server");
         //check if they are any players connected
+        std::cout << "Checking if are players connected " << std::endl;
         response = client.send_data_sync("players", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
-        int numPlayers = getNumberOfPlayers(response);
+        std::cout << response.data << std::endl;
+        int numPlayers = getNumberOfPlayers(response.data);
         if (numPlayers = 0)
         {
             std::cout << "No players connected" << std::endl;
             bot.getApi().sendMessage(chat_id, "No hay jugadores conectados, reiniciando a la fuerza");
             response = client.send_data_sync("save", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-            std::cout << "Response data: " << response.data << std::endl;
+            std::cout << response.data << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(5));
             response = client.send_data_sync("quit", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-            std::cout << "Response data: " << response.data << std::endl;
+            std::cout << response.data << std::endl;
+            std::cout << "Server restarted" << std::endl;
             bot.getApi().sendMessage(chat_id, "Server reiniciado");
             exit(1);
         }
         response = client.send_data_sync("servermsg Los_Mods_necesitan_update!__Reinicio_Inminente__", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(10));
         response = client.send_data_sync("servermsg Reiniciando_server_en_5_min", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
+        std::cout << "Waiting 5 minutes" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(60));
         response = client.send_data_sync("servermsg Reiniciando_server_en_4_min", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(60));
 
+        std::cout << "Checking if players still connected " << std::endl;
         response = client.send_data_sync("players", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
-        numPlayers = getNumberOfPlayers(response);
+        std::cout << response.data << std::endl;
+        numPlayers = getNumberOfPlayers(response.data);
         if (numPlayers = 0)
         {
-            std::cout << "Players already disconnected" << std::endl;
+            std::cout << "Players already disconnected, skipping timeout" << std::endl;
             response = client.send_data_sync("save", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-            std::cout << "Response data: " << response.data << std::endl;
+            std::cout << response.data << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(5));
             response = client.send_data_sync("quit", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-            std::cout << "Response data: " << response.data << std::endl;
+            std::cout << response.data << std::endl;
             bot.getApi().sendMessage(chat_id, "Server reiniciado");
             exit(1);
         }
+        std::cout << "Players still connected, continuing countdown" << std::endl;
         response = client.send_data_sync("servermsg Reiniciando_server_en_3_min", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(60));
         response = client.send_data_sync("servermsg Reiniciando_server_en_2_min", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(60));
         response = client.send_data_sync("servermsg Reiniciando_server_en_1_min", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(60));
+        std::cout << response.data << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(30));
         response = client.send_data_sync("servermsg Reiniciando_server_en_30_seg", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(30));
         response = client.send_data_sync("save", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
-        std::cout << "Response data: " << response.data << std::endl;
+        std::cout << response.data << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(5));
-        bot.getApi().sendMessage(chat_id, "Server reiniciado");    
-    
+        response = client.send_data_sync("quit", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
+        std::cout << response.data << std::endl;
+        bot.getApi().sendMessage(chat_id, "Save Realizado, Server reiniciado");  
+        std::cout << "Server restarted" << std::endl;
     }
     else
     {
-        std::cout << "No match found entering cooldown" << std::endl;
+        std::cout << "No match found terminating program" << std::endl;
     }
 
     return 0;
