@@ -237,9 +237,11 @@ bool analazingLogFile()
 
 // look number of players connected
 int getNumberOfPlayers(const std::string& response) {
+    std::cout << "Getting number of players connected" << std::endl;
     size_t pos = response.find("Players connected (");
     if (pos == std::string::npos) {
         // No player information found in the response
+        std::cout << "No player information found in the response" << std::endl;
         return 0;
     }
 
@@ -248,9 +250,11 @@ int getNumberOfPlayers(const std::string& response) {
     // Find the closing parenthesis
     size_t endPos = response.find(')', pos);
     if (endPos == std::string::npos) {
+        std::cout << "Invalid response format" << std::endl;
         // Invalid response format
         return 0;
     }
+
 
     // Extract the number of players as a substring
     std::string numPlayersStr = response.substr(pos, endPos - pos);
@@ -258,6 +262,7 @@ int getNumberOfPlayers(const std::string& response) {
     // Convert the substring to an integer
     int numPlayers = std::stoi(numPlayersStr);
 
+    std::cout << "Number of players connected: " << numPlayers << std::endl;
     return numPlayers;
 }
 
@@ -311,7 +316,7 @@ int main()
         response = client.send_data_sync("players", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
         std::cout << response.data << std::endl;
         int numPlayers = getNumberOfPlayers(response.data);
-        if (numPlayers = 0)
+        if (numPlayers == 0)
         {
             std::cout << "No players connected" << std::endl;
             bot.getApi().sendMessage(chat_id, "No hay jugadores conectados, reiniciando a la fuerza");
@@ -339,7 +344,7 @@ int main()
         response = client.send_data_sync("players", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
         std::cout << response.data << std::endl;
         numPlayers = getNumberOfPlayers(response.data);
-        if (numPlayers = 0)
+        if (numPlayers == 0)
         {
             std::cout << "Players already disconnected, skipping timeout" << std::endl;
             response = client.send_data_sync("save", 3, rconpp::data_type::SERVERDATA_EXECCOMMAND, true);
